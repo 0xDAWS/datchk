@@ -95,10 +95,14 @@ def main():
         check_results = check_roms(rom_files_list, args.verbose, args.failed)
 
         console.rule("Results")
-        console.print("{:<15} {}".format("Processed:",      check_results['PROC']),style="bold blue")
-        console.print("{:<15} {}".format("Failed:",         check_results['FAIL']),style="bold red")
-        console.print("{:<15} {}".format("Checksum N/A:",   check_results['CSNA']),style="bold yellow")
-        console.print("{:<15} {}".format("Not in datfile:", check_results['NIDF']),style="bold magenta")
+        if check_results['PROC'] > 0:
+            console.print("{:<15} {}".format("Processed:",      check_results['PROC']),style="bold blue")
+        if check_results['FAIL'] > 0:
+            console.print("{:<15} {}".format("Failed:",         check_results['FAIL']),style="bold red")
+        if check_results['CSNA'] > 0:
+            console.print("{:<15} {}".format("Checksum N/A:",   check_results['CSNA']),style="bold yellow")
+        if check_results['NIDF'] > 0:
+            console.print("{:<15} {}".format("Not in datfile:", check_results['NIDF']),style="bold magenta")
 
     if args.search:
         with console.status("Searching for matching roms.."):
