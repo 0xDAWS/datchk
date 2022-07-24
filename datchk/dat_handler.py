@@ -20,6 +20,7 @@ class DatParser(object):
         self.datfile = infile
         self.tree = xml.parse(self.datfile)
         self.root = self.tree.getroot()
+        self.header = self.root.findall('header')
         self.games  = self.root.findall('game')
         self.entries = len(self.games)
         self.current_rom = Rom
@@ -28,8 +29,8 @@ class DatParser(object):
 
     def get_dat_header(self):
         return [t.tag for t in self.header[0]]
-	
-	def search_rom_names_w_str(self, search_key: str) -> list:
+
+    def search_rom_names_w_str(self, search_key: str) -> list:
         entry_idx = 0
         
         keys = [search_key,
@@ -50,7 +51,7 @@ class DatParser(object):
 
         return results
 	
-	def get_rom_node_from_name_exact(self, rom_name: str):
+    def get_rom_node_from_name_exact(self, rom_name: str):
         for e in self.root.findall(f'game[@name="{Path(rom_name).stem}"]'):
             for rom_data in e.findall(f'rom'):
                 if rom_data.get('name') is not None:
@@ -58,7 +59,7 @@ class DatParser(object):
                     self.parse_game_node(rom_data)
                     return
 				
-	def get_rom_node_from_md5(self, digest: str):
+    def get_rom_node_from_md5(self, digest: str):
         for e in self.root.iterfind(f'game/rom[@md5="{digest}"]'):
             if e.get('md5') is not None:
                 self.current_rom_found_match = True
