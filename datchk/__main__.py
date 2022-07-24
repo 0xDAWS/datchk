@@ -25,7 +25,7 @@ class rom_checker():
                         'PROC':0,'NIDF':0,
                         'CSNA':0}
 
-    def get_node(self, rom):
+    def get_node(self, rom) -> None:
         datp.get_rom_node_from_name_exact(basename(rom))
 
         if not datp.current_rom_found_match:
@@ -35,7 +35,7 @@ class rom_checker():
         if not datp.current_rom_found_match:
             self.nidf = True
 
-    def compare(self, rom, checksum):
+    def compare(self, rom, checksum)-> None:
         if checksum is not None:
             self.valid = compare_checksum(rom,
                                           checksum,
@@ -45,7 +45,7 @@ class rom_checker():
             self.csna = True
 
 
-    def validate(self, rom):
+    def validate(self, rom) -> None:
         match args.algorithm:
             case "sha1":
                 self.compare(rom, datp.current_rom.sha1)
@@ -60,7 +60,7 @@ class rom_checker():
                     else:
                         pass
 
-    def check(self):
+    def check(self) -> None:
         for rom in self.roms:
             datp.current_rom_found_match = False
             self.valid = False
