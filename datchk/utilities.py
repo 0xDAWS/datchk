@@ -31,5 +31,5 @@ def get_digest(algorithm, rom_path, tmp_dir) -> str:
     
     return h.hexdigest()
 
-def compare_rom_checksum(algoritm, rom_path, rom_digest, tmpdir) -> bool:
-    return get_digest(algoritm,rom_path,tmpdir) == rom_digest
+def compare_checksum(rom_path, rom_digest, algoritm, tmpdir) -> bool:
+    return get_digest(algoritm, rom_path, tmpdir) == rom_digest

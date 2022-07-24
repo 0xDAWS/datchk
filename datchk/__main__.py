@@ -1,6 +1,6 @@
 from .arg_handler import ArgHandler
 from .dat_handler import DatParser
-from .utilities import compare_rom_checksum, get_digest
+from .utilities import compare_checksum, get_digest
 
 from os.path import basename,abspath
 from pathlib import Path
@@ -21,7 +21,9 @@ class rom_checker():
         self.md5 = None
         self.roms = roms
         self.tmpdir = TemporaryDirectory()
-        self.results = {'PASS':0,'FAIL':0,'PROC':0,'NIDF':0,'CSNA':0}
+        self.results = {'PASS':0,'FAIL':0,
+                        'PROC':0,'NIDF':0,
+                        'CSNA':0}
 
     def get_node(self, rom):
         datp.get_rom_node_from_name_exact(basename(rom))
@@ -35,7 +37,10 @@ class rom_checker():
 
     def compare(self, rom, checksum):
         if checksum is not None:
-            self.valid = compare_rom_checksum(args.algorithm,rom,checksum,self.tmpdir)
+            self.valid = compare_checksum(rom,
+                                          checksum,
+                                          args.algorithm,
+                                          self.tmpdir)
         else:
             self.csna = True
 
@@ -101,7 +106,7 @@ class rom_checker():
 
             self.tmpdir.cleanup()
 
-def gen_romfile_list_from_path(path: str, is_dir: bool, is_file: bool) -> list:
+def get_romlist_from_path(path: str, is_dir: bool, is_file: bool) -> list:
     if is_dir:
         return [p for p in Path(path).iterdir() if p.is_file()]
     if is_file:
@@ -115,9 +120,9 @@ def check_rom_list(rom_list: list) -> dict:
 def main():
 
     if args.check:
-        rom_files_list = gen_romfile_list_from_path(args.path, 
-                                                    args.path_is_d, 
-                                                    args.path_is_f)
+        rom_files_list = get_romlist_from_path(args.path,
+                                               args.path_is_d,
+                                               args.path_is_f)
 
         console.print("[+] Started check operation..", style="bold yellow")
 

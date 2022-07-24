@@ -1,23 +1,36 @@
 import argparse
 from os.path import isdir,isfile,abspath
 
-parser = argparse.ArgumentParser(description='Verify .dat files for rom collections')
-parser.add_argument('path', nargs='?', type=str, help='Path to rom file or directory')
-parser.add_argument('-d','--datfile', type=str, help='Path to .dat file')
-parser.add_argument('-v','--verbose', action='store_true', help='Enable verbose output mode')
-parser.add_argument('-r','--rename', action='store_true', help='Enable quiet output mode')
-parser.add_argument('-c','--check',action='store_true',help='Validate rom files')
-parser.add_argument('-a','--algorithm',type=str,help='Set hash algorithm [md5,sha1,sha256]')
-parser.add_argument('-f','--failed', action='store_true',help='Display rom entry')
-parser.add_argument('-s','--search',type=str,help='Search datfile with a keyword')
+parser = argparse.ArgumentParser(description='Command line datfile parser and validator')
+parser.add_argument('path', nargs='?', 
+                    type=str, 
+                    help='Path to rom file or directory')
+parser.add_argument('-d','--datfile', 
+                    type=str, 
+                    help='Path to .dat file')
+parser.add_argument('-r','--rename', 
+                    action='store_true', 
+                    help='Enable quiet output mode')
+parser.add_argument('-c','--check',
+                    action='store_true',
+                    help='Validate rom files')
+parser.add_argument('-a','--algorithm',
+                    type=str,
+                    help='Set hash algorithm [md5,sha1,sha256]')
+parser.add_argument('-f','--failed',
+                    action='store_true',
+                    help='Display rom entry')
+parser.add_argument('-s','--search',
+                    type=str,
+                    help='Search datfile with a keyword')
+
 args = parser.parse_args()
 
 class ArgHandler():
     def __init__(self):
         self.datfile 	= abspath(args.datfile)
-        self.verbose 	= args.verbose
         self.rename 	= args.rename
-        self.check 		= args.check
+        self.check      = args.check
         self.algorithm 	= 'md5'
         self.search 	= args.search
         self.failed 	= args.failed

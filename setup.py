@@ -6,7 +6,7 @@ with open("README.md", 'r') as f:
 setup(
 name='datchk',
 version='0.1',
-author='0xDaws',
+author='Daws',
 author_email='0xdaws@protonmail.com',
 description='Command line datfile parser and validator',
 url='https://github.com/0xDAWS/datchk',
