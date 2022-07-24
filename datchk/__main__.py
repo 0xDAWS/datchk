@@ -12,78 +12,107 @@ console = Console()
 args = ArgHandler()
 datp = DatParser(args.datfile)
 
+class rom_checker():
+    def __init__(self, roms):
+        datp.current_rom_found_match = False
+        self.valid = False
+        self.nidf = False
+        self.csna = False
+        self.md5 = None
+        self.roms = roms
+        self.tmpdir = TemporaryDirectory()
+        self.results = {'PASS':0,'FAIL':0,'PROC':0,'NIDF':0,'CSNA':0}
+
+    def get_node(self, rom):
+        datp.get_rom_node_from_name_exact(basename(rom))
+
+        if not datp.current_rom_found_match:
+            self.md5 = get_digest('md5', rom, self.tmpdir)
+            datp.get_rom_node_from_md5(self.md5)
+
+        if not datp.current_rom_found_match:
+            self.nidf = True
+
+    def compare(self, rom, checksum):
+        if checksum is not None:
+            self.valid = compare_rom_checksum(args.algorithm,rom,checksum,self.tmpdir)
+        else:
+            self.csna = True
+
+
+    def validate(self, rom):
+        match args.algorithm:
+            case "sha1":
+                self.compare(rom, datp.current_rom.sha1)
+            case "sha256":
+                self.compare(rom, datp.current_rom.sha256)
+            case _:
+                if self.md5 is None:
+                    self.compare(rom, datp.current_rom.md5)
+                else:
+                    if self.md5 == datp.current_rom.md5:
+                        self.valid = True
+                    else:
+                        pass
+
+    def check(self):
+        for rom in self.roms:
+            datp.current_rom_found_match = False
+            self.valid = False
+            self.nidf = False
+            self.csna = False
+            self.md5 = None
+
+            self.get_node(rom)
+
+            if datp.current_rom_found_match:
+                self.validate(rom)
+            else:
+                pass
+
+            # Display results
+            if self.nidf:
+                console.print("[magenta]{:<15}[/magenta] {}".format("[ NIDF ]", 
+								    basename(rom)),highlight=False)
+                self.results['NIDF'] += 1
+                self.results['PROC'] += 1
+                continue
+
+            if self.csna:
+                console.print("[yellow]{:<15}[/yellow] {}".format("[ CSNA ]", 
+								  basename(rom)),highlight=False)
+                self.results['CSNA'] += 1
+                self.results['PROC'] += 1
+                continue
+
+            if self.valid:
+                if args.failed:
+                    pass
+                else:
+                    console.print("[green]{:<15}[/green] {}".format("[ PASS ]", 
+								    basename(rom)),highlight=False)
+                    self.results['PASS'] += 1
+
+            else:
+                console.print("[red]{:<15}[/red] {}".format("[ FAIL ]",basename(rom)),highlight=False)
+                self.results['FAIL'] += 1
+
+            self.results['PROC'] += 1
+
+            self.tmpdir.cleanup()
+
 def gen_romfile_list_from_path(path: str, is_dir: bool, is_file: bool) -> list:
     if is_dir:
         return [p for p in Path(path).iterdir() if p.is_file()]
     if is_file:
         return [ abspath(path) ]
-	
-def check_roms(rom_list: list, arg_verbose: bool, arg_failed: bool) -> dict:
-    results = {'PASS':0,'FAIL':0,'PROC':0,'NIDF':0,'CSNA':0}
-    tmpdir = TemporaryDirectory()
 
-    for rom in rom_list:
-
-        # Reset the check states
-        datp.current_rom_found_match = False
-        valid_rom = False
-        rom_md5 = None
-
-        # Attempt to find rom node using the rom filename
-        datp.get_rom_node_from_name_exact(basename(rom))
-
-        # If match not found attempt to find the rom using its md5 digest
-        if not datp.current_rom_found_match:
-            rom_md5 = get_digest('md5', rom, tmpdir)
-            datp.get_rom_node_from_md5(rom_md5)
-
-        # If still no match add to NIDF results
-        if not datp.current_rom_found_match:
-            console.print("[magenta]{:<15}[/magenta] {}".format("[ NIDF ]", basename(rom)),highlight=False)
-            results['NIDF'] += 1
-            results['PROC'] += 1
-            continue
-
-        # Checksum validation
-        match args.algorithm:
-            case "md5":
-                if rom_md5 is None:
-                    valid_rom = compare_rom_checksum(args.algorithm,rom,datp.current_rom.md5,tmpdir)
-                else:
-                    if rom_md5 == datp.current_rom.md5:
-                        valid_rom = True
-                    else:
-                        pass
-            case "sha1":
-                valid_rom = compare_rom_checksum(args.algorithm,rom,datp.current_rom.sha1,tmpdir)
-            case "sha256":
-                if datp.current_rom.sha256 is not None:
-                    valid_rom = compare_rom_checksum(args.algorithm,rom,datp.current_rom.sha256,tmpdir)
-                else:
-                    console.print("[yellow]{:<15}[/yellow] {}".format("[ CSNA ]", basename(rom)),highlight=False)
-                    results['CSNA'] += 1
-                    results['PROC'] += 1
-                    continue
-
-        # Output results
-        if valid_rom:
-            if arg_failed:
-                pass
-            else:
-                console.print("[green]{:<15}[/green] {}".format("[ PASS ]", basename(rom)),highlight=False)
-                results['PASS'] += 1
-        else:
-            console.print("[red]{:<15}[/red] {}".format("[ FAIL ]",basename(rom)),highlight=False)
-            results['FAIL'] += 1
-
-        results['PROC'] += 1
-
-        tmpdir.cleanup()
-
-    return results
+def check_rom_list(rom_list: list) -> dict:
+    rchecker = rom_checker(rom_list)
+    rchecker.check()
+    return rchecker.results
 
 def main():
-    console.rule("Datchk")
 
     if args.check:
         rom_files_list = gen_romfile_list_from_path(args.path, 
@@ -92,17 +121,21 @@ def main():
 
         console.print("[+] Started check operation..", style="bold yellow")
 
-        check_results = check_roms(rom_files_list, args.verbose, args.failed)
+        check_results = check_rom_list(rom_files_list)
 
         console.rule("Results")
         if check_results['PROC'] > 0:
-            console.print("{:<15} {}".format("Processed:",      check_results['PROC']),style="bold blue")
+            console.print("{:<15} {}".format("Processed:",      
+            check_results['PROC']),style="bold blue")
         if check_results['FAIL'] > 0:
-            console.print("{:<15} {}".format("Failed:",         check_results['FAIL']),style="bold red")
+            console.print("{:<15} {}".format("Failed:",         
+            check_results['FAIL']),style="bold red")
         if check_results['CSNA'] > 0:
-            console.print("{:<15} {}".format("Checksum N/A:",   check_results['CSNA']),style="bold yellow")
+            console.print("{:<15} {}".format("Checksum N/A:",   
+            check_results['CSNA']),style="bold yellow")
         if check_results['NIDF'] > 0:
-            console.print("{:<15} {}".format("Not in datfile:", check_results['NIDF']),style="bold magenta")
+            console.print("{:<15} {}".format("Not in datfile:", 
+            check_results['NIDF']),style="bold magenta")
 
     if args.search:
         with console.status("Searching for matching roms.."):
