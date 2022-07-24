@@ -1,6 +1,6 @@
 from .arg_handler import ArgHandler
 from .dat_handler import DatParser
-from .dat_hasher import compare_rom_checksum, get_digest
+from .utilities import compare_rom_checksum, get_digest
 
 from os.path import basename,abspath
 from pathlib import Path

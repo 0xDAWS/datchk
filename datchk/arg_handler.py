@@ -29,7 +29,7 @@ class ArgHandler():
 
         self.validate()
 		
-	def validate(self):
+    def validate(self):
         # Test for path
         if args.path:
             if isfile(abspath(self.path)):
@@ -53,4 +53,4 @@ class ArgHandler():
                 self.algorithm = args.algorithm.lower()
             else:
                 print("[ERROR] Invalid algorithm choice, using default: MD5")
-				pass
+                pass
