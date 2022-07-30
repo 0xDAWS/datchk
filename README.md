@@ -24,7 +24,7 @@ datchk --datfile path/to/datfile.dat --check path/to/roms
 ```
 datchk --datfile path/to/datfile.dat --check --failed path/to/roms
 ```
-Failed results contain not only failed checksums (FAIL), but also CheckSum Not Available (CSNA) and Not In DatFile (NIDF) results. Read [Output Codes](#output-codes)  for more
+Failed results contain not only failed checksums (FAIL), but also CheckSum Not Available (CSNA) and Not In DatFile (NIDF) results. Read [Output Codes](#output-codes) for more
 
 ### Perform check but use hash algorithm other than md5
 ```

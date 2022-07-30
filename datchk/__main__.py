@@ -67,13 +67,13 @@ class rom_checker():
 
     def output_result_line(self, stat, color, **kwargs):
         if "entryname" in kwargs:
-            console.print("[{}][ {} ][/{}]  {:<15} [{}]({})[/{}]".format(
+            console.print("[{}][ {} ][/{}]  {} [{}]({})[/{}]".format(
             color, stat, color, 
             basename(kwargs["filename"]),
             color, kwargs["entryname"], color), 
             highlight=False)
         else:
-            console.print("[{}][ {} ][/{}]  {:<15}".format(
+            console.print("[{}][ {} ][/{}]  {}".format(
             color, stat, color, basename(kwargs["filename"])), highlight=False)
 
         self.results[stat] += 1
@@ -96,7 +96,6 @@ class rom_checker():
                 pass
 
             # Display results
-
             if self.nidf:
                 self.output_result_line("NIDF", "magenta", filename=basename(rom))
                 continue
