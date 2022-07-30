@@ -55,7 +55,7 @@ Typical output from using the check flag will look something like this
 [ NIDF ]  rom-4.ext
 [ PBIN ]  rom-5.ext (Legend of Rom - Rom's Adventure.ext)
 ```
-Some of th output codes (acronyms in square brackets) will be self explanatory, but let's take a look at what each means and how it can help you to get the best information from the check results.
+Some of the output codes will be self explanatory, but let's take a look at what each means and how it can help you to get the best information from the check results.
 
 ### PASS
 The file matched an entry in the datfile and it's checksum was validated as correct.
@@ -72,9 +72,16 @@ Datchk attempts to locate matching entries in a datfile by using the exact name 
 ### PBIN (Pass But Incorrect Name)
 This code shows that the MD5 of the file currently being processed *was* located in the datfile, but the name of the file did not match the corresponding value in the datfile entry. Essentially you have a valid file, but an incorrect name. Often worth investigating to ensure the filename matches it's contents.
 
-*You should take note of the filename inside the brackets, this is the name which contains the matching MD5 entry in the datfile, and will be useful in identifying if the rom is adequately named*
+*You should take note of the filename inside the brackets, this is the name of the entry in the datfile which matches the MD5 checksum of your file. It's useful for finding valid but incorrectly named roms.*
 
 # GPG Signing Key
 All official releases are signed with my GPG key found [here](https://github.com/0xDAWS/Public-Keys/blob/main/0xDAWS.SigningKey.Public.asc)
 
 You can verify the downloaded files are intact and unmodified by verifying the checksum file using this key.
+
+# What's next?
+- Improve search feature
+- Allow users to generate a list from search results (All titles for a specific region for example)
+- Implement rename feature, which will allow users to rename files which have a different name from their entry in the datfile.
+- More error handling 
+- Progress bar/counter
