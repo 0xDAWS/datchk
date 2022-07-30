@@ -1,5 +1,5 @@
 # Datchk - Datfile Checker
-A command line datfile parser and validator written in python.
+A command line datfile parser and rom validator written in python.
 
 # Quick Links
 - [Installation](#installation)

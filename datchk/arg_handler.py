@@ -1,5 +1,6 @@
 import argparse
-from os.path import isdir,isfile,abspath
+from os.path import isdir, isfile, abspath
+
 
 class CustomHelpFormatter(argparse.HelpFormatter):
     def __init__(self, prog):
@@ -10,48 +11,59 @@ class CustomHelpFormatter(argparse.HelpFormatter):
             return super()._format_action_invocation(action)
         default = self._get_default_metavar_for_optional(action)
         args_string = self._format_args(action, default)
-        return ', '.join(action.option_strings) + ' ' + args_string
+        return ", ".join(action.option_strings) + " " + args_string
+
 
 fmt = lambda prog: CustomHelpFormatter(prog)
-parser = argparse.ArgumentParser(formatter_class=fmt, description='Command line datfile parser and validator')
-parser.add_argument('path', nargs='?', 
-                    type=str, 
-                    help='Path to rom file or directory',
-                    metavar='PATH')
-parser.add_argument('-d','--datfile', 
-                    help='Path to datfile', metavar='PATH')
-parser.add_argument('-r','--rename', 
-                    action='store_true', 
-                    help='Rename an incorrectly named file with its datfile entry name')
-parser.add_argument('-c','--check',
-                    action='store_true',
-                    help='Validate rom files')
-parser.add_argument('-a','--algorithm',
-                    help='Set hash algorithm [md5,sha1,sha256]', metavar='ALGORITHM')
-parser.add_argument('-f','--failed',
-                    action='store_true',
-                    help='Output only results with fail output codes')
-parser.add_argument('-s','--search',
-                    help='Search datfile with a keyword', metavar='KEYWORD')
+parser = argparse.ArgumentParser(
+    formatter_class=fmt, description="Command line datfile parser and validator"
+)
+parser.add_argument(
+    "path", nargs="?", type=str, help="Path to rom file or directory", metavar="PATH"
+)
+parser.add_argument("-d", "--datfile", help="Path to datfile", metavar="PATH")
+parser.add_argument(
+    "-r",
+    "--rename",
+    action="store_true",
+    help="Rename an incorrectly named file with its datfile entry name",
+)
+parser.add_argument("-c", "--check", action="store_true", help="Validate rom files")
+parser.add_argument(
+    "-a",
+    "--algorithm",
+    help="Set hash algorithm [md5,sha1,sha256]",
+    metavar="ALGORITHM",
+)
+parser.add_argument(
+    "-f",
+    "--failed",
+    action="store_true",
+    help="Output only results with fail output codes",
+)
+parser.add_argument(
+    "-s", "--search", help="Search datfile with a keyword", metavar="KEYWORD"
+)
 
 args = parser.parse_args()
 
-class ArgHandler():
+
+class ArgHandler:
     def __init__(self):
-        self.datfile 	= abspath(args.datfile)
-        self.rename 	= args.rename
-        self.check      = args.check
-        self.algorithm 	= 'md5'
-        self.search 	= args.search
-        self.failed 	= args.failed
-        self.path_is_d 	= False
-        self.path_is_f 	= False
+        self.datfile = abspath(args.datfile)
+        self.rename = args.rename
+        self.check = args.check
+        self.algorithm = "md5"
+        self.search = args.search
+        self.failed = args.failed
+        self.path_is_d = False
+        self.path_is_f = False
 
         if args.path:
             self.path = abspath(args.path)
 
         self.validate()
-		
+
     def validate(self):
         # Test for path
         if args.path:
@@ -65,14 +77,24 @@ class ArgHandler():
 
         # Test for conflicting flags
         if self.check and self.search:
-            print("[ERROR] Cannot use --check and --search at the same time\nQuitting ..")
+            print(
+                "[ERROR] Cannot use --check and --search at the same time\nQuitting .."
+            )
             exit()
-			
-		# Test for algorithm other than default
+
+        # Test for algorithm other than default
         if args.algorithm:
-            if args.algorithm in ['md5'   ,'Md5'   ,'MD5',
-                                  'sha1'  ,'Sha1'  ,'SHA1',
-                                  'sha256','Sha256','SHA256']:
+            if args.algorithm in [
+                "md5",
+                "Md5",
+                "MD5",
+                "sha1",
+                "Sha1",
+                "SHA1",
+                "sha256",
+                "Sha256",
+                "SHA256",
+            ]:
                 self.algorithm = args.algorithm.lower()
             else:
                 print("[ERROR] Invalid algorithm choice, using default: MD5")
