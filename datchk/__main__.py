@@ -18,22 +18,29 @@ class rom_checker():
         self.valid = False
         self.nidf = False
         self.csna = False
+        self.pbin = False
         self.md5 = None
         self.roms = roms
         self.tmpdir = TemporaryDirectory()
         self.results = {'PASS':0,'FAIL':0,
                         'PROC':0,'NIDF':0,
-                        'CSNA':0}
+                        'CSNA':0,'PBIN':0}
 
     def get_node(self, rom) -> None:
         datp.get_rom_node_from_name_exact(basename(rom))
 
-        if not datp.current_rom_found_match:
+        if datp.current_rom_found_match:
+            return
+        else:
             self.md5 = get_digest('md5', rom, self.tmpdir)
             datp.get_rom_node_from_md5(self.md5)
-
-        if not datp.current_rom_found_match:
+            
+        if datp.current_rom_found_match:
+            self.pbin = True
+        else:
             self.nidf = True
+
+        return
 
     def compare(self, rom, checksum)-> None:
         if checksum is not None:
@@ -55,10 +62,7 @@ class rom_checker():
                 if self.md5 is None:
                     self.compare(rom, datp.current_rom.md5)
                 else:
-                    if self.md5 == datp.current_rom.md5:
-                        self.valid = True
-                    else:
-                        pass
+                    pass
 
     def check(self) -> None:
         for rom in self.roms:
@@ -66,6 +70,7 @@ class rom_checker():
             self.valid = False
             self.nidf = False
             self.csna = False
+            self.pbin = False
             self.md5 = None
 
             self.get_node(rom)
@@ -87,6 +92,13 @@ class rom_checker():
                 console.print("[yellow]{:<15}[/yellow] {}".format("[ CSNA ]", 
 								  basename(rom)),highlight=False)
                 self.results['CSNA'] += 1
+                self.results['PROC'] += 1
+                continue
+
+            if self.pbin:
+                console.print("[blue]{:<15}[/blue] {}".format("[ PBIN ]", 
+                            basename(rom)),highlight=False)
+                self.results['PBIN'] += 1
                 self.results['PROC'] += 1
                 continue
 
