@@ -1,5 +1,13 @@
-# datchk
-Command line datfile parser and validator
+# Datchk - Datfile Checker
+A command line datfile parser and validator written in python.
+
+# Quick Links
+- [Installation](#installation)
+- [Usage](#usage)
+- [Supported File Types](#supported-file-types)
+- [Output Codes](#output-codes)
+- [GPG Key](#gpg-signing-key)
+- [Planned Features](#planned-features)
 
 # Installation
 ```
@@ -79,9 +87,9 @@ All official releases are signed with my GPG key found [here](https://github.com
 
 You can verify the downloaded files are intact and unmodified by verifying the checksum file using this key.
 
-# What's next?
-- Improve search feature
+# Planned features
+- Improve search functionality
 - Allow users to generate a list from search results (All titles for a specific region for example)
-- Implement rename feature, which will allow users to rename files which have a different name from their entry in the datfile.
-- More error handling 
+- Implement auto-rename, which will allow users to rename files which have a different name from their entry in the datfile.
+- More error handling
 - Progress bar/counter
