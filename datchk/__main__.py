@@ -37,6 +37,7 @@ class rom_checker():
             
         if datp.current_rom_found_match:
             self.pbin = True
+            self.valid = True
         else:
             self.nidf = True
 
@@ -64,6 +65,20 @@ class rom_checker():
                 else:
                     pass
 
+    def output_result_line(self, stat, color, **kwargs):
+        if "entryname" in kwargs:
+            console.print("[{}][ {} ][/{}]  {:<15} [{}]({})[/{}]".format(
+            color, stat, color, 
+            basename(kwargs["filename"]),
+            color, kwargs["entryname"], color), 
+            highlight=False)
+        else:
+            console.print("[{}][ {} ][/{}]  {:<15}".format(
+            color, stat, color, basename(kwargs["filename"])), highlight=False)
+
+        self.results[stat] += 1
+        self.results['PROC'] += 1
+
     def check(self) -> None:
         for rom in self.roms:
             datp.current_rom_found_match = False
@@ -81,40 +96,30 @@ class rom_checker():
                 pass
 
             # Display results
-            if self.nidf:
-                console.print("[magenta]{:<15}[/magenta] {}".format("[ NIDF ]", 
-								    basename(rom)),highlight=False)
-                self.results['NIDF'] += 1
-                self.results['PROC'] += 1
-                continue
 
+            if self.nidf:
+                self.output_result_line("NIDF", "magenta", filename=basename(rom))
+                continue
+            
             if self.csna:
-                console.print("[yellow]{:<15}[/yellow] {}".format("[ CSNA ]", 
-								  basename(rom)),highlight=False)
-                self.results['CSNA'] += 1
-                self.results['PROC'] += 1
+                self.output_result_line("CSNA","yellow",filename=basename(rom))
                 continue
 
             if self.pbin:
-                console.print("[blue]{:<15}[/blue] {}".format("[ PBIN ]", 
-                            basename(rom)),highlight=False)
-                self.results['PBIN'] += 1
-                self.results['PROC'] += 1
-                continue
+                if args.failed:
+                    pass
+                else:
+                    self.output_result_line("PBIN","blue", filename=basename(rom), entryname=datp.current_rom.name)
+                    continue
 
             if self.valid:
                 if args.failed:
                     pass
                 else:
-                    console.print("[green]{:<15}[/green] {}".format("[ PASS ]", 
-								    basename(rom)),highlight=False)
-                    self.results['PASS'] += 1
+                    self.output_result_line("PASS","green", filename=basename(rom))
 
             else:
-                console.print("[red]{:<15}[/red] {}".format("[ FAIL ]",basename(rom)),highlight=False)
-                self.results['FAIL'] += 1
-
-            self.results['PROC'] += 1
+                self.output_result_line("FAIL","red", filename=basename(rom))
 
             self.tmpdir.cleanup()
 
