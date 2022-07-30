@@ -30,12 +30,35 @@ Failed results contain not only failed checksums (FAIL), but also CheckSum Not A
 ```
 datchk --datfile path/to/datfile.dat --check --algorithm sha256 path/to/roms
 ```
-Available algorithms: MD5, SHA1, SHA256
+In most cases MD5 is perfectly fine for checking the integrity of a file since we don't require any particular cryptographic strength for the use of verifying the file bytes are correct. Nevertheless some users may want to use other hash algorithms commonly found in datfiles, so several are made available.
 
+**Available algorithms: MD5, SHA1, SHA256**
+
+# Supported file types
+The best way to use [datchk](#datchk) is to have your roms uncompressed and organised in suitable directories. Some users prefer to have their roms compressed to save disk space, so datchk can process and validate compressed roms as well!
+
+To achieve this the compressed archive will be decompressed to a tmp directory created when you execute datchk. Obviously, this will result in more read/writes on your disk and will be much slower in most cases, so it's a better idea to have your roms uncompressed for the best experience.
+
+**Supported archive formats: .zip and .7z**
+
+Archive files must contain **ONLY** a single rom to be processed by datchk, multiple file archives are not supported.
 
 # Output Codes
+Typical output from using the check flag will look something like this
+
+```
+❯ datchk -d path/to/datfile.dat -c path/to/roms
+[+] Started check operation..
+[ PASS ]  rom-1.ext
+[ FAIL ]  rom-2.ext
+[ CSNA ]  rom-3.ext
+[ NIDF ]  rom-4.ext
+[ PBIN ]  rom-5.ext (Legend of Rom - Rom's Adventure.ext)
+```
+Some of th output codes (acronyms in square brackets) will be self explanatory, but let's take a look at what each means and how it can help you to get the best information from the check results.
+
 ### PASS
-Self-explantory. The file matched an entry in the datfile and it's checksum was validated as correct.
+The file matched an entry in the datfile and it's checksum was validated as correct.
 
 ### FAIL
 When comparing checksums, a match will give a **PASS** result as mentioned above, but an incorrect match will give the **FAIL** result. Fail in this case means the rom entry was correctly identified in the datfile, but the checksum of the rom does not match the corresponding value in the datfile entry.
@@ -48,3 +71,10 @@ Datchk attempts to locate matching entries in a datfile by using the exact name 
 
 ### PBIN (Pass But Incorrect Name)
 This code shows that the MD5 of the file currently being processed *was* located in the datfile, but the name of the file did not match the corresponding value in the datfile entry. Essentially you have a valid file, but an incorrect name. Often worth investigating to ensure the filename matches it's contents.
+
+*You should take note of the filename inside the brackets, this is the name which contains the matching MD5 entry in the datfile, and will be useful in identifying if the rom is adequately named*
+
+# GPG Signing Key
+All official releases are signed with my GPG key found [here](https://github.com/0xDAWS/Public-Keys/blob/main/0xDAWS.SigningKey.Public.asc)
+
+You can verify the downloaded files are intact and unmodified by verifying the checksum file using this key.

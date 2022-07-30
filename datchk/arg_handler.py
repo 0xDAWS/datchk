@@ -1,28 +1,38 @@
 import argparse
 from os.path import isdir,isfile,abspath
 
-parser = argparse.ArgumentParser(description='Command line datfile parser and validator')
+class CustomHelpFormatter(argparse.HelpFormatter):
+    def __init__(self, prog):
+        super().__init__(prog, max_help_position=40, width=80)
+
+    def _format_action_invocation(self, action):
+        if not action.option_strings or action.nargs == 0:
+            return super()._format_action_invocation(action)
+        default = self._get_default_metavar_for_optional(action)
+        args_string = self._format_args(action, default)
+        return ', '.join(action.option_strings) + ' ' + args_string
+
+fmt = lambda prog: CustomHelpFormatter(prog)
+parser = argparse.ArgumentParser(formatter_class=fmt, description='Command line datfile parser and validator')
 parser.add_argument('path', nargs='?', 
                     type=str, 
-                    help='Path to rom file or directory')
+                    help='Path to rom file or directory',
+                    metavar='PATH')
 parser.add_argument('-d','--datfile', 
-                    type=str, 
-                    help='Path to .dat file')
+                    help='Path to datfile', metavar='PATH')
 parser.add_argument('-r','--rename', 
                     action='store_true', 
-                    help='Enable quiet output mode')
+                    help='Rename an incorrectly named file with its datfile entry name')
 parser.add_argument('-c','--check',
                     action='store_true',
                     help='Validate rom files')
 parser.add_argument('-a','--algorithm',
-                    type=str,
-                    help='Set hash algorithm [md5,sha1,sha256]')
+                    help='Set hash algorithm [md5,sha1,sha256]', metavar='ALGORITHM')
 parser.add_argument('-f','--failed',
                     action='store_true',
-                    help='Display rom entry')
+                    help='Output only results with fail output codes')
 parser.add_argument('-s','--search',
-                    type=str,
-                    help='Search datfile with a keyword')
+                    help='Search datfile with a keyword', metavar='KEYWORD')
 
 args = parser.parse_args()
 
