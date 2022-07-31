@@ -35,23 +35,20 @@ class DatParser(object):
     def search_rom_names_w_str(self, search_key: str) -> list:
         entry_idx = 0
 
-        keys = [
-            search_key,
-            search_key.lower(),
-            search_key.upper(),
-            search_key.title(),
-            search_key.capitalize(),
-        ]
-
         results = {}
         for game in self.games:
-            for key in keys:
-                if key in game.get("name"):
-                    if game.find("rom").get("name") not in results.values():
-                        results[entry_idx] = game.find("rom").get("name")
-                        entry_idx += 1
-                    else:
-                        pass
+            game_name = game.find("rom").get("name")
+            if (
+                search_key.casefold() in game_name.casefold()
+                or search_key.casefold() == game_name.casefold()
+            ):
+                if game_name not in results.values():
+                    results[entry_idx] = game_name
+                    entry_idx += 1
+                else:
+                    pass
+            else:
+                pass
 
         return results
 

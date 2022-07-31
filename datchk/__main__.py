@@ -190,7 +190,7 @@ def main():
         with console.status("Searching for matching roms.."):
             results = datp.search_rom_names_w_str(args.search)
 
-        if len(results) - 1 > 0:
+        if results:
             console.print(
                 "[!] Found {} matching entries..\n".format(len(results)),
                 style="bold yellow",
