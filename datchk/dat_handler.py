@@ -32,9 +32,12 @@ class DatParser(object):
     def get_dat_header(self):
         return [t.tag for t in self.header[0]]
 
-    def search_rom_names_w_str(self, search_key: str) -> list:
+    def search_rom_names_w_str(self, search_key: str) -> dict:
+        """
+        Generates a dict containing items in the form {index:name}
+        from the results of searching for matching strings in a datfile
+        """
         entry_idx = 0
-
         results = {}
         for game in self.games:
             game_name = game.find("rom").get("name")
