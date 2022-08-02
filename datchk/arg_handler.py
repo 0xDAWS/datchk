@@ -50,7 +50,11 @@ args = parser.parse_args()
 
 class ArgHandler:
     def __init__(self):
-        self.datfile = abspath(args.datfile)
+        if args.datfile is not None:
+            self.datfile = abspath(args.datfile)
+        else:
+            print("[ERROR] No datfile was provided, use -d or --datfile")
+            exit()
         self.rename = args.rename
         self.check = args.check
         self.algorithm = "md5"

@@ -20,11 +20,17 @@ class Rom:
 class DatParser(object):
     def __init__(self, infile):
         self.datfile = infile
-        self.tree = xml.parse(self.datfile)
-        self.root = self.tree.getroot()
+        try:
+            self.tree = xml.parse(self.datfile)
+            self.root = self.tree.getroot()
+        except xml.ParseError as e:
+            print("[ERROR] Failed to parse datfile\nQuitting ..")
+            exit()
+
         self.header = self.root.findall("header")
         self.games = self.root.findall("game")
         self.entries = len(self.games)
+
         self.current_rom = Rom
         self.current_rom_found_match = False
         self.console = Console()
@@ -40,7 +46,12 @@ class DatParser(object):
         entry_idx = 0
         results = {}
         for game in self.games:
-            game_name = game.find("rom").get("name")
+            if "name" in game.find("rom").attrib:
+                game_name = game.find("rom").get("name")
+            else:
+                print("[ERROR] datfile entry does not contain attribute 'name'")
+                exit()
+
             if (
                 search_key.casefold() in game_name.casefold()
                 or search_key.casefold() == game_name.casefold()
