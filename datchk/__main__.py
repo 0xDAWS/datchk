@@ -90,7 +90,6 @@ class rom_checker:
             )
 
         self.results[stat] += 1
-        self.results["PROC"] += 1
 
     def check(self) -> None:
         for rom in self.roms:
@@ -107,6 +106,8 @@ class rom_checker:
                 self.validate(rom)
             else:
                 pass
+
+            self.results["PROC"] += 1
 
             # Display results
             if self.nidf:
