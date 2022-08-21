@@ -101,7 +101,7 @@ All official releases are signed with my GPG key found [here](https://github.com
 You can verify the downloaded files are intact and unmodified by verifying the checksum file using this key.
 
 # Planned features
-- Improve search functionality
+- Improve search functionality and output formatting
 - Allow users to generate a list from search results (All titles for a specific region for example)
 - Implement auto-rename, which will allow users to rename files which have a different name from their entry in the datfile.
 - More error handling

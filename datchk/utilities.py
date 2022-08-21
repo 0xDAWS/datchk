@@ -1,3 +1,10 @@
+"""
+DATCHK
+A command line datfile parser and rom validator written in python.
+
+Written By: Daws
+"""
+
 import hashlib
 from pathlib import Path
 from py7zr import SevenZipFile

@@ -1,7 +1,14 @@
+"""
+DATCHK
+A command line datfile parser and rom validator written in python.
+
+Written By: Daws
+"""
+
 from setuptools import setup
 
-# with open("README.md", "r") as f:
-#     long_description = f.read()
+# TODO: This is throwing a UnicodeDecodeError during pip install on Windows machines.
+# L_DESC = open('README.md').read()
 
 setup(
     name="datchk",
@@ -14,6 +21,7 @@ setup(
     install_requires=["rich", "py7zr"],
     python_requires=">=3.10",
     long_description_content_type="text/markdown",
+    # long_description=L_DESC,
     license="MIT",
     entry_points={"console_scripts": ["datchk=datchk.__main__:main"]},
 )

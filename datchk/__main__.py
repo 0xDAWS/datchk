@@ -1,3 +1,10 @@
+"""
+DATCHK
+A command line datfile parser and rom validator written in python.
+
+Written By: Daws
+"""
+
 from .arg_handler import ArgHandler
 from .dat_handler import DatParser
 from .utilities import compare_checksum, get_digest
