@@ -1,5 +1,5 @@
 # Datchk - Datfile Checker
-A command line datfile parser and rom validator written in python.
+A command line datfile parser and file validator written in python.
 
 # Quick Links
 - [Installation](#installation)
@@ -18,15 +18,15 @@ pip install .
 
 # Usage
 
-### Perform check on a rom or directory of roms
+### Perform check on a file or directory of files
 ```
-datchk --datfile path/to/datfile.dat --check path/to/roms
+datchk --datfile path/to/datfile.dat --check path/to/files
 ```
 ___
 
 ### Perform check but use hash algorithm other than md5
 ```
-datchk --datfile path/to/datfile.dat --check --algorithm sha256 path/to/roms
+datchk --datfile path/to/datfile.dat --check --algorithm sha256 path/to/files
 ```
 In most cases MD5 is perfectly fine for checking the integrity of a file since we don't require any particular cryptographic strength for the use of verifying the file bytes are correct. Nevertheless some users may want to use other hash algorithms commonly found in datfiles, so several are made available.
 
@@ -47,36 +47,36 @@ datchk --datfile path/to/datfile.dat --search "Zelda"
 **NOTE:** Use --help or -h to bring up this information 
 ```
 positional arguments:
-  PATH                       Path to rom file or directory
+  PATH                       Path to file or directory
 
 options:
   -h, --help                 show this help message and exit
   -d, --datfile PATH         Path to datfile
   -r, --rename               Rename an incorrectly named file with its datfile entry name
-  -c, --check                Validate rom files
+  -c, --check                Validate files
   -a, --algorithm ALGORITHM  Set hash algorithm [md5,sha1,sha256]
   -s, --search KEYWORD       Search datfile with a keyword
 ```
 
 # Supported file types
-The best way to use [datchk](#datchk) is to have your roms uncompressed and organised in suitable directories. Some users prefer to have their roms compressed to save disk space, so datchk can process and validate compressed roms as well!
+The best way to use [datchk](#datchk) is to have your files uncompressed and organised in suitable directories. Some users prefer to have their files compressed to save disk space, so datchk can process and validate some compressed files as well!
 
-To achieve this the compressed archive will be decompressed to a tmp directory created when you execute datchk. Obviously, this will result in more read/writes on your disk and will be much slower in most cases, so it's a better idea to have your roms uncompressed for the best experience.
+To achieve this the compressed archive will be decompressed to a tmp directory created when you execute datchk. Obviously, this will result in more read/writes on your disk and will be much slower in most cases, so it's a better idea to have your files uncompressed for the best experience.
 
 **Supported archive formats: .zip and .7z**
 
-Archive files must contain **ONLY** a single rom to be processed by datchk, multiple file archives are not supported.
+Archive files must contain **ONLY** a single file to be processed by datchk, multiple file archives are not supported.
 
 # Output Codes
 After datchk completes a check operation, a report is automatically generated and will display the results of the check, including any warnings and failed checksum matches.
-Some of the output codes will be self explanatory, but let's take a look at what each means and how it can help you to get the best information from the check operation report.
+Some of the output codes will be self explanatory, but let's take a look at what each means and how it can help you to get the best information ffile the check operation report.
 
 ### PASS
 The file matched an entry in the datfile and it's checksum was validated as correct.
 ___
 
 ### FAIL
-When comparing checksums, a match will give a **PASS** result as mentioned above, but an incorrect match will give the **FAIL** result. Fail in this case means the rom entry was correctly identified in the datfile, but the checksum of the rom does not match the corresponding value in the datfile entry.
+When comparing checksums, a match will give a **PASS** result as mentioned above, but an incorrect match will give the **FAIL** result. Fail in this case means the file entry was correctly identified in the datfile, but the checksum of the file does not match the corresponding value in the datfile entry.
 ___
 
 ### CSNA (CheckSum Not Available)
@@ -90,7 +90,7 @@ ___
 ### PBIN (Pass But Incorrect Name)
 This code shows that the MD5 of the file currently being processed *was* located in the datfile, but the name of the file did not match the corresponding value in the datfile entry. Essentially you have a valid file, but an incorrect name. Often worth investigating to ensure the filename matches it's contents.
 
-*You should take note of the filename inside the brackets, this is the name of the entry in the datfile which matches the MD5 checksum of your file. It's useful for finding valid but incorrectly named roms.*
+*You should take note of the filename inside the brackets, this is the name of the entry in the datfile which matches the MD5 checksum of your file. It's useful for finding valid but incorrectly named files.*
 
 # GPG Signing Key
 All official releases are signed with my GPG key found [here](https://github.com/0xDAWS/Public-Keys/blob/main/0xDAWS.SigningKey.Public.asc)
@@ -99,6 +99,7 @@ You can verify the downloaded files are intact and unmodified by verifying the c
 
 # Planned features
 - Improve search functionality and output formatting
-- Allow users to generate a list from search results (All titles for a specific region for example)
-- Implement auto-rename, which will allow users to rename files which have a different name from their entry in the datfile.
+- Allow users to generate a list ffile search results (All titles for a specific region for example)
+- Implement auto-rename, which will allow users to rename files which have a different name ffile their entry in the datfile.
 - More error handling and code refactoring
+- Add the ability to recursively find all files in a directory 
