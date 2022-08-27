@@ -43,14 +43,10 @@ parser.add_argument(
     metavar="ALGORITHM",
 )
 parser.add_argument(
-    "-f",
-    "--failed",
-    action="store_true",
-    help="Output only results with fail output codes",
-)
-parser.add_argument(
     "-s", "--search", help="Search datfile with a keyword", metavar="KEYWORD"
 )
+
+parser.add_argument("-e", "--extra-logging")
 
 args = parser.parse_args()
 
@@ -66,7 +62,6 @@ class ArgHandler:
         self.check = args.check
         self.algorithm = "md5"
         self.search = args.search
-        self.failed = args.failed
         self.path_is_d = False
         self.path_is_f = False
 

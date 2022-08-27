@@ -24,14 +24,6 @@ datchk --datfile path/to/datfile.dat --check path/to/roms
 ```
 ___
 
-### Perform check but only show failed results
-```
-datchk --datfile path/to/datfile.dat --check --failed path/to/roms
-```
-
-**NOTE:** Failed results contain not only failed checksums (FAIL), but also CheckSum Not Available (CSNA) and Not In DatFile (NIDF) results. Read [Output Codes](#output-codes) for more
-___
-
 ### Perform check but use hash algorithm other than md5
 ```
 datchk --datfile path/to/datfile.dat --check --algorithm sha256 path/to/roms
@@ -51,6 +43,21 @@ The search feature can match long and complex strings however, if they match a t
 datchk --datfile path/to/datfile.dat --search "Zelda"
 ```
 
+### Available Flags
+**NOTE:** Use --help or -h to bring up this information 
+```
+positional arguments:
+  PATH                       Path to rom file or directory
+
+options:
+  -h, --help                 show this help message and exit
+  -d, --datfile PATH         Path to datfile
+  -r, --rename               Rename an incorrectly named file with its datfile entry name
+  -c, --check                Validate rom files
+  -a, --algorithm ALGORITHM  Set hash algorithm [md5,sha1,sha256]
+  -s, --search KEYWORD       Search datfile with a keyword
+```
+
 # Supported file types
 The best way to use [datchk](#datchk) is to have your roms uncompressed and organised in suitable directories. Some users prefer to have their roms compressed to save disk space, so datchk can process and validate compressed roms as well!
 
@@ -61,18 +68,8 @@ To achieve this the compressed archive will be decompressed to a tmp directory c
 Archive files must contain **ONLY** a single rom to be processed by datchk, multiple file archives are not supported.
 
 # Output Codes
-Typical output from using the check flag will look something like this
-
-```
-❯ datchk -d path/to/datfile.dat -c path/to/roms
-[+] Started check operation..
-[ PASS ]  rom-1.ext
-[ FAIL ]  rom-2.ext
-[ CSNA ]  rom-3.ext
-[ NIDF ]  rom-4.ext
-[ PBIN ]  rom-5.ext (Legend of Rom - Rom's Adventure.ext)
-```
-Some of the output codes will be self explanatory, but let's take a look at what each means and how it can help you to get the best information from the check results.
+After datchk completes a check operation, a report is automatically generated and will display the results of the check, including any warnings and failed checksum matches.
+Some of the output codes will be self explanatory, but let's take a look at what each means and how it can help you to get the best information from the check operation report.
 
 ### PASS
 The file matched an entry in the datfile and it's checksum was validated as correct.
@@ -104,5 +101,4 @@ You can verify the downloaded files are intact and unmodified by verifying the c
 - Improve search functionality and output formatting
 - Allow users to generate a list from search results (All titles for a specific region for example)
 - Implement auto-rename, which will allow users to rename files which have a different name from their entry in the datfile.
-- More error handling
-- Progress bar/counter
+- More error handling and code refactoring

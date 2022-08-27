@@ -10,6 +10,8 @@ from pathlib import Path
 from py7zr import SevenZipFile
 from zipfile import ZipFile
 
+CHUNK_SIZE = 1024
+
 
 def extract_archive(rom_path, tmpdir) -> str:
     if Path(rom_path).suffix == ".zip":
@@ -25,21 +27,30 @@ def extract_archive(rom_path, tmpdir) -> str:
     return rom_name
 
 
-def get_digest(algorithm, rom_path, tmp_dir) -> str:
-    h = hashlib.new(algorithm)
+class HashHandler:
+    def __init__(self) -> None:
+        self.read_bytes: int = 0
+        self.status: str = ""
+        # self.tmp_dir = tmpdir
+        # self.progress = pbar
+        # self.task = task
 
-    if Path(rom_path).suffix in [".zip", ".7z"]:
-        rom_name = extract_archive(rom_path, tmp_dir)
+    def get_digest(self, rom, algo) -> str:
+        h = hashlib.new(algo)
+        # self.progress.update(self.task, completed=0)
 
-        with open(Path(tmp_dir.name, rom_name), "rb") as f:
-            h.update(f.read())
+        with open(rom, "rb") as f:
+            while chunk := f.read(CHUNK_SIZE):
+                h.update(chunk)
+                self.read_bytes += len(chunk)
 
-    else:
-        with open(rom_path, "rb") as f:
-            h.update(f.read())
+        return h.hexdigest()
 
-    return h.hexdigest()
+    def compare_checksum(self, rom, digest, algo) -> bool:
+        return self.get_digest(rom, algo) == digest
 
+    def get_read_bytes(self) -> int:
+        return self.read_bytes
 
-def compare_checksum(rom_path, rom_digest, algoritm, tmpdir) -> bool:
-    return get_digest(algoritm, rom_path, tmpdir) == rom_digest
+    def get_status(self) -> str:
+        return self.status

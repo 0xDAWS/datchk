@@ -6,208 +6,19 @@ Written By: Daws
 """
 
 from fileinput import filename
+from turtle import update
 from .arg_handler import ArgHandler
+from .check import Check
 from .dat_handler import DatParser
-from .utilities import compare_checksum, get_digest
 
-from collections import Counter
-from os.path import basename, abspath
+from os.path import abspath
 from pathlib import Path
 from rich.console import Console
 from rich.table import Table
-from rich.progress import (
-    Progress,
-    TextColumn,
-    BarColumn,
-    TaskProgressColumn,
-    MofNCompleteColumn,
-)
-from tempfile import TemporaryDirectory
 
 console = Console()
 args = ArgHandler()
 datp = DatParser(args.datfile)
-
-
-class rom_checker:
-    def __init__(self, roms):
-        datp.current_rom_found_match = False
-        self.valid = False
-        self.md5 = None
-        self.roms = roms
-        self.rom_count = len(self.roms)
-        self.tmpdir = TemporaryDirectory()
-        self.results = {}
-
-    def get_node(self, rom) -> None:
-        datp.get_rom_node_from_name_exact(basename(rom))
-
-        if datp.current_rom_found_match:
-            return
-        else:
-            self.md5 = get_digest("md5", rom, self.tmpdir)
-            datp.get_rom_node_from_md5(self.md5)
-
-        if datp.current_rom_found_match:
-            match args.algorithm:
-                case "sha1":
-                    if datp.current_rom.sha1 is None:
-                        self.results[basename(rom)] = "CSNA"
-                        return
-                case "sha256":
-                    if datp.current_rom.sha256 is None:
-                        self.results[basename(rom)] = "CSNA"
-                        return
-                case "md5":
-                    if datp.current_rom.md5 is None:
-                        self.results[basename(rom)] = "CSNA"
-                        return
-
-            self.results[basename(rom)] = "PBIN"
-            return
-        else:
-            self.results[basename(rom)] = "NIDF"
-            return
-
-    def compare(self, rom, checksum) -> None:
-        if checksum is not None:
-            if compare_checksum(rom, checksum, args.algorithm, self.tmpdir):
-                self.results[basename(rom)] = "PASS"
-            else:
-                self.results[basename(rom)] = "FAIL"
-        else:
-            self.results[basename(rom)] = "CSNA"
-
-    def validate(self, rom) -> None:
-        match args.algorithm:
-            case "sha1":
-                self.compare(rom, datp.current_rom.sha1)
-            case "sha256":
-                self.compare(rom, datp.current_rom.sha256)
-            case _:
-                if self.md5 is None:
-                    self.compare(rom, datp.current_rom.md5)
-                else:
-                    pass
-
-    def output_result_line(self, stat, color, **kwargs):
-        if "entryname" in kwargs:
-            console.print(
-                "[{}][ {} ][/{}]  {} [{}]({})[/{}]".format(
-                    color,
-                    stat,
-                    color,
-                    basename(kwargs["filename"]),
-                    color,
-                    kwargs["entryname"],
-                    color,
-                ),
-                highlight=False,
-            )
-        else:
-            console.print(
-                "[{}][ {} ][/{}]  {}".format(
-                    color, stat, color, basename(kwargs["filename"])
-                ),
-                highlight=False,
-            )
-
-    def check(self) -> None:
-        progress = Progress(
-            MofNCompleteColumn(),
-            BarColumn(),
-            TaskProgressColumn(),
-            TextColumn("[bold blue]{task.fields[filename]}", justify="right"),
-        )
-
-        task_id = progress.add_task(
-            "[green]Processing...", total=self.rom_count, filename="Blank"
-        )
-
-        with progress:
-            for rom in self.roms:
-                datp.current_rom_found_match = False
-                self.valid = False
-                self.nidf = False
-                self.csna = False
-                self.pbin = False
-                self.md5 = None
-
-                self.get_node(rom)
-
-                progress.update(task_id, filename=basename(rom))
-
-                if datp.current_rom_found_match:
-                    if basename(rom) not in self.results.keys():
-                        self.validate(rom)
-                    else:
-                        pass
-                else:
-                    pass
-
-                progress.update(task_id, advance=1)
-
-                self.tmpdir.cleanup()
-
-            progress.update(task_id, filename="Complete!")
-
-    def show_check_results(self):
-        if args.failed and "FAIL" not in self.results:
-            console.print("\n[+] All roms have passed verification", style="bold blue")
-        else:
-            console.rule("Results")
-            for rom, ocode in self.results.items():
-                match ocode:
-                    case "PASS":
-                        if args.failed:
-                            pass
-                        else:
-                            self.output_result_line(ocode, "green", filename=rom)
-                    case "NIDF":
-                        self.output_result_line(ocode, "magenta", filename=rom)
-                    case "CSNA":
-                        self.output_result_line(ocode, "yellow", filename=rom)
-                    case "PBIN":
-                        if args.failed:
-                            pass
-                        else:
-                            # self.output_result_line(
-                            #     "PBIN",
-                            #     "blue",
-                            #     filename=rom,
-                            #     entryname=datp.current_rom.name,
-                            # )
-                            self.output_result_line(ocode, "blue", filename=rom)
-                    case _:
-                        self.output_result_line("FAIL", "red", filename=basename(rom))
-
-    def show_statistics(self):
-        console.rule("Statistics")
-        stats = Counter(self.results.values())
-        if self.rom_count > 0:
-            console.print(
-                "{:<15} {}".format("Processed:", self.rom_count),
-                style="bold blue",
-            )
-
-        if stats["PASS"] > 0:
-            console.print(
-                "{:<15} {}".format("Passed:", stats["PASS"]), style="bold green"
-            )
-        if stats["FAIL"] > 0:
-            console.print(
-                "{:<15} {}".format("Failed:", stats["FAIL"]), style="bold red"
-            )
-        if stats["CSNA"] > 0:
-            console.print(
-                "{:<15} {}".format("Checksum N/A:", stats["CSNA"]),
-                style="bold yellow",
-            )
-        if stats["NIDF"] > 0:
-            console.print(
-                "{:<15} {}".format("Not in datfile:", stats["NIDF"]),
-                style="bold magenta",
-            )
 
 
 def get_romlist_from_path(path: str, is_dir: bool, is_file: bool) -> list:
@@ -218,10 +29,10 @@ def get_romlist_from_path(path: str, is_dir: bool, is_file: bool) -> list:
 
 
 def check_rom_list(rom_list: list) -> dict:
-    rchecker = rom_checker(rom_list)
-    rchecker.check()
-    rchecker.show_check_results()
-    rchecker.show_statistics()
+    chk = Check(rom_list, datp, console, args)
+    chk.check()
+    chk.show_statistics()
+    chk.generate_report_tree()
 
 
 def main():
