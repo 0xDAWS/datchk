@@ -14,6 +14,7 @@ from rich.progress import (
     BarColumn,
     TaskProgressColumn,
     MofNCompleteColumn,
+    TimeElapsedColumn,
 )
 from tempfile import TemporaryDirectory
 
@@ -24,7 +25,7 @@ class Check:
         self.console = console
         self.dat = datfile
         self.dat.current_rom_found_match = False
-        self.md5: str = ""
+        self.md5: str = None
         self.roms = self.get_romlist_from_path(
             self.args.path, self.args.path_is_d, self.args.path_is_f
         )
@@ -64,6 +65,7 @@ class Check:
             MofNCompleteColumn(),
             BarColumn(),
             TaskProgressColumn(),
+            TimeElapsedColumn(),
             TextColumn("[bold blue]{task.fields[filename]}", justify="right"),
         )
         self.task_total = self.progress.add_task(
@@ -84,12 +86,26 @@ class Check:
         }
 
     def get_node(self, rom) -> None:
+        """
+        TODO:
+        Currently if a match can't be found from the filename
+        The file MD5 is calculated and then that digest is used to search the
+        datfile. This is fine if the user is using the default MD5
+        for the entire check, but is adding extra computations
+        if SHA1 or SHA256 is being used as it will calculate
+        the digest for both the MD5 and the users chosen algorithm
+
+        A solution will need to be implemented which can either uses
+        another piece of data from the dat file, filesize+CRC or the
+        digest of the chosen algorithm (if available)
+        """
         self.dat.get_rom_node_from_name_exact(self.current_rom_filename)
 
         if self.dat.current_rom_found_match:
             self.update_rom_digests()
             return
         else:
+            self.md5 = self.hasher.get_digest(rom, "md5")
             self.dat.get_rom_node_from_md5(self.md5)
 
         if self.dat.current_rom_found_match:
@@ -108,12 +124,21 @@ class Check:
     def compare(self, rom, checksum) -> None:
 
         if checksum is not None:
-            if self.hasher.compare_checksum(rom, checksum, self.args.algorithm):
-                self.results_passed += 1
+            if self.md5 and self.args.algorithm == "md5":
+                if self.md5 == checksum:
+                    self.results_passed += 1
+                else:
+                    self.results[self.current_rom_filename] = "FAIL"
+                return
             else:
-                self.results[self.current_rom_filename] = "FAIL"
+                if self.hasher.compare_checksum(rom, checksum, self.args.algorithm):
+                    self.results_passed += 1
+                else:
+                    self.results[self.current_rom_filename] = "FAIL"
+                return
         else:
             self.results[self.current_rom_filename] = "CSNA"
+            return
 
     def validate(self, rom) -> None:
         self.compare(rom, self.rom_digests[self.args.algorithm])
@@ -181,15 +206,25 @@ class Check:
 
         check_panel = self.build_check_panel()
 
-        with Live(
-            check_panel,
-            refresh_per_second=20,
-            screen=True,
-        ) as live_check:
-            # with self.progress:
+        if self.args.live:
+            display_mgr = Live(
+                check_panel,
+                refresh_per_second=20,
+                screen=True,
+            )
+        else:
+            display_mgr = self.progress
+
+        # with Live(
+        #     check_panel,
+        #     refresh_per_second=20,
+        #     screen=True,
+        # ) as live_check:
+        with display_mgr:
             self.status = "Processing"
 
             for rom in self.roms:
+                self.md5 = None
                 self.dat.current_rom_found_match = False
                 self.current_rom_filename = basename(rom)
 
@@ -199,13 +234,14 @@ class Check:
                     rom_name = extract_archive(rom, self.tmpdir)
                     rom = Path(self.tmpdir.name, rom_name)
 
-                self.md5 = self.hasher.get_digest(rom, "md5")
+                # self.md5 = self.hasher.get_digest(rom, "md5")
 
                 check_panel = self.build_check_panel()
                 self.progress.update(
                     self.task_total, filename=self.current_rom_filename
                 )
-                live_check.update(check_panel)
+                if self.args.live:
+                    display_mgr.update(check_panel)
 
                 self.get_node(rom)
 

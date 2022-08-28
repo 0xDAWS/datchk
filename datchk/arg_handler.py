@@ -47,6 +47,12 @@ parser.add_argument(
 parser.add_argument(
     "-s", "--search", help="Search datfile with a keyword", metavar="KEYWORD"
 )
+parser.add_argument(
+    "-l",
+    "--live",
+    action="store_true",
+    help="If set check operation will use live display",
+)
 
 args = parser.parse_args()
 
@@ -62,6 +68,7 @@ class ArgHandler:
         self.check = args.check
         self.algorithm = "md5"
         self.search = args.search
+        self.live = args.live
         self.path_is_d = False
         self.path_is_f = False
 
