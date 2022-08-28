@@ -26,7 +26,7 @@ parser = argparse.ArgumentParser(
     formatter_class=fmt, description="Command line datfile parser and validator"
 )
 parser.add_argument(
-    "path", nargs="?", type=str, help="Path to rom file or directory", metavar="PATH"
+    "path", nargs="?", type=str, help="Path to file or directory", metavar="PATH"
 )
 parser.add_argument("-d", "--datfile", help="Path to datfile", metavar="PATH")
 parser.add_argument(
@@ -35,7 +35,9 @@ parser.add_argument(
     action="store_true",
     help="Rename an incorrectly named file with its datfile entry name",
 )
-parser.add_argument("-c", "--check", action="store_true", help="Validate rom files")
+parser.add_argument(
+    "-c", "--check", action="store_true", help="Validate file or directory of files"
+)
 parser.add_argument(
     "-a",
     "--algorithm",
@@ -45,8 +47,6 @@ parser.add_argument(
 parser.add_argument(
     "-s", "--search", help="Search datfile with a keyword", metavar="KEYWORD"
 )
-
-parser.add_argument("-e", "--extra-logging")
 
 args = parser.parse_args()
 

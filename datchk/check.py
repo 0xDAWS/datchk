@@ -1,9 +1,9 @@
 from .utilities import HashHandler, extract_archive
 
 from collections import Counter
-from os.path import basename, getsize
+from os.path import abspath, basename
 from pathlib import Path
-from rich.console import group, Group
+from rich.console import group
 from rich.live import Live
 from rich.panel import Panel
 from rich.table import Table
@@ -17,28 +17,17 @@ from rich.progress import (
 )
 from tempfile import TemporaryDirectory
 
-# from rich.logging import RichHandler
-# import logging
-
-# import time
-
-
-# FORMAT = "%(message)s"
-# logging.basicConfig(
-#     level="NOTSET", format=FORMAT, datefmt="[%X]", handlers=[RichHandler()]
-# )
-# log = logging.getLogger("rich")
-
 
 class Check:
-    def __init__(self, roms, datfile, console, args):
+    def __init__(self, console, datfile, args):
         self.args = args
         self.console = console
         self.dat = datfile
         self.dat.current_rom_found_match = False
-        self.valid = False
         self.md5: str = ""
-        self.roms = roms
+        self.roms = self.get_romlist_from_path(
+            self.args.path, self.args.path_is_d, self.args.path_is_f
+        )
         self.rom_count = len(self.roms)
         self.rom_digests = {}
         self.tmpdir = TemporaryDirectory()
@@ -80,6 +69,12 @@ class Check:
         self.task_total = self.progress.add_task(
             "[green]Total...", total=self.rom_count, filename=""
         )
+
+    def get_romlist_from_path(self, path: str, is_dir: bool, is_file: bool) -> list:
+        if is_dir:
+            return [p for p in Path(path).iterdir() if p.is_file()]
+        if is_file:
+            return [abspath(path)]
 
     def update_rom_digests(self) -> None:
         self.rom_digests = {
@@ -181,6 +176,9 @@ class Check:
         yield self.build_progress_panel()
 
     def check(self) -> None:
+        self.console.print("[+] Started check operation..", style="bold yellow")
+        self.console.print(f"[*] Found {len(self.roms)} files..", style="bold yellow")
+
         check_panel = self.build_check_panel()
 
         with Live(
@@ -203,10 +201,6 @@ class Check:
 
                 self.md5 = self.hasher.get_digest(rom, "md5")
 
-                # log.info(
-                #     f"Current: {rom}\nName:{self.current_rom_filename}\nMD5:{self.md5}"
-                # )
-
                 check_panel = self.build_check_panel()
                 self.progress.update(
                     self.task_total, filename=self.current_rom_filename
@@ -228,6 +222,9 @@ class Check:
                 self.tmpdir.cleanup()
 
             self.progress.update(self.task_total, filename="Complete!")
+
+        self.show_statistics()
+        self.generate_report_tree()
 
     def show_statistics(self):
         self.console.rule("Statistics")

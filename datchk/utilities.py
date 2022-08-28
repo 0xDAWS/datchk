@@ -10,7 +10,7 @@ from pathlib import Path
 from py7zr import SevenZipFile
 from zipfile import ZipFile
 
-CHUNK_SIZE = 1024
+CHUNK_SIZE = 16 * 1024
 
 
 def extract_archive(rom_path, tmpdir) -> str:
