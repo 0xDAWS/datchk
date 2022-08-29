@@ -28,7 +28,7 @@ parser = argparse.ArgumentParser(
 parser.add_argument(
     "path", nargs="?", type=str, help="Path to file or directory", metavar="PATH"
 )
-parser.add_argument("-d", "--datfile", help="Path to datfile", metavar="PATH")
+parser.add_argument("-f", "--file", help="Path to datfile", metavar="PATH")
 parser.add_argument(
     "-r",
     "--rename",
@@ -51,7 +51,13 @@ parser.add_argument(
     "-l",
     "--live",
     action="store_true",
-    help="If set check operation will use live display",
+    help="Check operation will use live display",
+)
+parser.add_argument(
+    "-d",
+    "--debug",
+    action="store_true",
+    help="Enable debug logging",
 )
 
 args = parser.parse_args()
@@ -59,13 +65,14 @@ args = parser.parse_args()
 
 class ArgHandler:
     def __init__(self):
-        if args.datfile is not None:
-            self.datfile = abspath(args.datfile)
+        if args.file is not None:
+            self.datfile = abspath(args.file)
         else:
             print("[ERROR] No datfile was provided, use -d or --datfile")
             exit()
         self.rename = args.rename
         self.check = args.check
+        self.debug = args.debug
         self.algorithm = "md5"
         self.search = args.search
         self.live = args.live

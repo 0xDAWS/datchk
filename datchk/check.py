@@ -6,17 +6,28 @@ from pathlib import Path
 from rich.console import group
 from rich.live import Live
 from rich.panel import Panel
-from rich.table import Table
+from rich.table import Table, Column
 from rich.align import Align
 from rich.progress import (
     Progress,
-    TextColumn,
+    # TextColumn,
     BarColumn,
     TaskProgressColumn,
     MofNCompleteColumn,
     TimeElapsedColumn,
+    SpinnerColumn,
 )
 from tempfile import TemporaryDirectory
+
+import logging
+from rich.logging import RichHandler
+
+FORMAT = "%(message)s"
+logging.basicConfig(
+    level="NOTSET", format=FORMAT, datefmt="[%X]", handlers=[RichHandler()]
+)
+
+log = logging.getLogger("rich")
 
 
 class Check:
@@ -25,7 +36,6 @@ class Check:
         self.console = console
         self.dat = datfile
         self.dat.current_rom_found_match = False
-        self.md5: str = None
         self.roms = self.get_romlist_from_path(
             self.args.path, self.args.path_is_d, self.args.path_is_f
         )
@@ -34,7 +44,7 @@ class Check:
         self.tmpdir = TemporaryDirectory()
         self.hasher = HashHandler()
 
-        # ocode lookup dicts
+        # lookup dicts
         self.ocode_color_lkup = {
             "PASS": "green",
             "FAIL": "red",
@@ -51,22 +61,29 @@ class Check:
 
         # Current State
         # self.current_status = "Waiting"
-        self.current_rom_filename = "None"
+        self.md5: str = None
+        self.current_rom_filename: str = ""
         self.current_rom_filesize: int = 0
+        self.is_archive: bool
+        self.archive_filename: str
 
         # Results
         self.results: dict = {}
         self.results_passed: int = 0
         self.results_count: dict = None
         self.pbin_map: dict = {}
+        self.arc_map: dict = {}
 
         # Progress Bar
         self.progress: Progress = Progress(
-            MofNCompleteColumn(),
-            BarColumn(),
-            TaskProgressColumn(),
-            TimeElapsedColumn(),
-            TextColumn("[bold blue]{task.fields[filename]}", justify="right"),
+            SpinnerColumn(table_column=Column(ratio=1)),
+            MofNCompleteColumn(table_column=Column(ratio=1)),
+            BarColumn(bar_width=None, table_column=Column(ratio=2)),
+            TaskProgressColumn(table_column=Column(ratio=1)),
+            TimeElapsedColumn(table_column=Column(ratio=1)),
+            # TextColumn("[bold blue]{task.fields[filename]}", justify="right"),
+            refresh_per_second=20,
+            # expand=True,
         )
         self.task_total = self.progress.add_task(
             "[green]Total...", total=self.rom_count, filename=""
@@ -102,6 +119,8 @@ class Check:
         self.dat.get_rom_node_from_name_exact(self.current_rom_filename)
 
         if self.dat.current_rom_found_match:
+            if self.args.debug and not self.args.live:
+                log.info(f"\nFOUND_MATCH_W_NAME:{self.current_rom_filename}")
             self.update_rom_digests()
             return
         else:
@@ -109,42 +128,89 @@ class Check:
             self.dat.get_rom_node_from_md5(self.md5)
 
         if self.dat.current_rom_found_match:
+            if self.args.debug and not self.args.live:
+                log.info(f"\nFOUND_MATCH_W_DGST:{self.current_rom_filename}")
             self.update_rom_digests()
 
             if not self.rom_digests[self.args.algorithm]:
                 return
             else:
-                self.results[self.current_rom_filename] = "PBIN"
-                self.pbin_map[self.current_rom_filename] = self.dat.current_rom.name
+                """
+                If we find a match based on the MD5 digest and not the name of the file itself,
+                the file is a valid but the filename is not, so we add to self.results with the
+                PBIN ocode (Passed But Incorrect Name) as the value.
+                For PBIN results we also want to suggest the correct name to the user so the
+                filename is added to self.pbin_map dict with the value of the entry-name contained
+                in the datfile.
+                """
+                if self.args.debug and not self.args.live:
+                    log.warn(f"RESULT_PBIN:{rom}")
+
+                if self.is_archive:
+                    self.results[self.archive_filename] = "PBIN"
+                    self.pbin_map[self.archive_filename] = self.dat.current_rom.name
+                else:
+                    self.results[self.current_rom_filename] = "PBIN"
+                    self.pbin_map[self.current_rom_filename] = self.dat.current_rom.name
                 return
         else:
-            self.results[self.current_rom_filename] = "NIDF"
+            if self.args.debug and not self.args.live:
+                log.info(f"RESULT_NIDF:{rom}")
+
+            if self.is_archive:
+                self.results[self.archive_filename] = "NIDF"
+            else:
+                self.results[self.current_rom_filename] = "NIDF"
             return
 
     def compare(self, rom, checksum) -> None:
-
+        # TODO: This needs some refactoring
         if checksum is not None:
             if self.md5 and self.args.algorithm == "md5":
                 if self.md5 == checksum:
+                    if self.args.debug and not self.args.live:
+                        log.info(f"RESULT_PASS:{rom}")
                     self.results_passed += 1
                 else:
-                    self.results[self.current_rom_filename] = "FAIL"
+                    if self.args.debug and not self.args.live:
+                        log.info(f"RESULT_FAIL:{rom}")
+                    if self.is_archive:
+                        self.results[self.archive_filename] = "FAIL"
+                    else:
+                        self.results[self.current_rom_filename] = "FAIL"
                 return
             else:
                 if self.hasher.compare_checksum(rom, checksum, self.args.algorithm):
+                    if self.args.debug and not self.args.live:
+                        log.info(f"RESULT_PASS:{rom}")
                     self.results_passed += 1
                 else:
-                    self.results[self.current_rom_filename] = "FAIL"
+                    if self.args.debug and not self.args.live:
+                        log.info(f"RESULT_FAIL:{rom}")
+                    if self.is_archive:
+                        self.results[self.archive_filename] = "FAIL"
+                    else:
+                        self.results[self.current_rom_filename] = "FAIL"
                 return
         else:
-            self.results[self.current_rom_filename] = "CSNA"
+            if self.args.debug and not self.args.live:
+                log.info(f"RESULT_CSNA:{rom}")
+            if self.is_archive:
+                self.results[self.archive_filename] = "CSNA"
+            else:
+                self.results[self.current_rom_filename] = "CSNA"
             return
 
     def validate(self, rom) -> None:
         self.compare(rom, self.rom_digests[self.args.algorithm])
 
     def build_status_table(self):
-        self.results_count = Counter(self.results.values())
+        try:
+            self.results_count = Counter(self.results.values())
+        except TypeError as e:
+            log.error(e)
+            self.console.print(f"Dumping results..\n{self.results}")
+            exit()
         table = Table(show_header=False)
         table.add_column("Result")
         table.add_column("Count", width=5, min_width=5, justify="right")
@@ -173,11 +239,7 @@ class Check:
 
     def build_progress_panel(self):
         table = Table.grid()
-        # table.add_row(
-        #     "[bold default]{}[/bold default]: [green]{}[/green]".format(
-        #         "Status", self.status
-        #     ),
-        # )
+        table.add_row(f"Current File: [bold blue]{self.current_rom_filename}")
         table.add_row(self.progress)
 
         return Panel(
@@ -185,6 +247,7 @@ class Check:
             title="[bold default]" + ("Progress"),
             border_style="green",
             padding=(2, 2),
+            expand=True,
         )
 
     def build_check_panel(self) -> None:
@@ -199,6 +262,9 @@ class Check:
     def get_panels(self):
         yield self.build_status_table()
         yield self.build_progress_panel()
+
+    def determine_file_or_archive(self, f):
+        return Path(f).suffix in [".zip", ".7z"]
 
     def check(self) -> None:
         self.console.print("[+] Started check operation..", style="bold yellow")
@@ -215,26 +281,28 @@ class Check:
         else:
             display_mgr = self.progress
 
-        # with Live(
-        #     check_panel,
-        #     refresh_per_second=20,
-        #     screen=True,
-        # ) as live_check:
         with display_mgr:
             self.status = "Processing"
 
             for rom in self.roms:
+                # Reset the state
                 self.md5 = None
                 self.dat.current_rom_found_match = False
-                self.current_rom_filename = basename(rom)
+                self.is_archive = self.determine_file_or_archive(rom)
 
                 # If a zip or 7z archive is detected from file extension
                 # we set rom to the tmp file path
-                if Path(rom).suffix in [".zip", ".7z"]:
-                    rom_name = extract_archive(rom, self.tmpdir)
-                    rom = Path(self.tmpdir.name, rom_name)
-
-                # self.md5 = self.hasher.get_digest(rom, "md5")
+                if self.is_archive:
+                    self.archive_filename = basename(rom)
+                    self.current_rom_filename = extract_archive(rom, self.tmpdir)
+                    rom = Path(self.tmpdir.name, self.current_rom_filename)
+                    self.arc_map[self.archive_filename] = self.current_rom_filename
+                    if self.args.debug:
+                        log.warn(
+                            f"\nARCHIVE_DETECTED: Archive Name:{self.archive_filename}\nCompressed Filename:{self.current_rom_filename}"
+                        )
+                else:
+                    self.current_rom_filename = basename(rom)
 
                 check_panel = self.build_check_panel()
                 self.progress.update(
@@ -246,10 +314,16 @@ class Check:
                 self.get_node(rom)
 
                 if self.dat.current_rom_found_match:
-                    if self.current_rom_filename not in self.results.keys():
-                        self.validate(rom)
+                    if self.is_archive:
+                        if self.archive_filename not in self.results.keys():
+                            self.validate(rom)
+                        else:
+                            pass
                     else:
-                        pass
+                        if self.current_rom_filename not in self.results.keys():
+                            self.validate(rom)
+                        else:
+                            pass
                 else:
                     pass
 
@@ -304,16 +378,36 @@ class Check:
         for rom_name, ocode in self.results.items():
             match ocode:
                 case "FAIL":
-                    fail_tree.add(f"[{self.ocode_color_lkup[ocode]}]{rom_name}")
+                    if self.determine_file_or_archive(rom_name):
+                        fail_tree.add(
+                            f"[bold default](A) [/bold default][{self.ocode_color_lkup[ocode]}]{rom_name}[bold default] -> [/bold default][green]{self.arc_map[rom_name]}"
+                        )
+                    else:
+                        fail_tree.add(f"[{self.ocode_color_lkup[ocode]}]{rom_name}")
                 case "CSNA":
-                    csna_tree.add(f"[{self.ocode_color_lkup[ocode]}]{rom_name}")
+                    if self.determine_file_or_archive(rom_name):
+                        csna_tree.add(
+                            f"[bold default](A) [/bold default][{self.ocode_color_lkup[ocode]}]{rom_name}[bold default] -> [bold default][green]{self.arc_map[rom_name]}"
+                        )
+                    else:
+                        csna_tree.add(f"[{self.ocode_color_lkup[ocode]}]{rom_name}")
                 case "NIDF":
-                    nidf_tree.add(f"[{self.ocode_color_lkup[ocode]}]{rom_name}")
+                    if self.determine_file_or_archive(rom_name):
+                        nidf_tree.add(
+                            f"[bold default](A) [/bold default][{self.ocode_color_lkup[ocode]}]{rom_name}[bold default] -> [bold default][green]{self.arc_map[rom_name]}"
+                        )
+                    else:
+                        nidf_tree.add(f"[{self.ocode_color_lkup[ocode]}]{rom_name}")
                 case "PBIN":
-                    branch = pbin_tree.add(
-                        f"[{self.ocode_color_lkup[ocode]}]{rom_name}"
-                    )
-                    branch.add(f"Name in Datfile: [green]{self.pbin_map[rom_name]}")
+                    if self.determine_file_or_archive(rom_name):
+                        branch = pbin_tree.add(
+                            f"[bold default](A) [/bold default][{self.ocode_color_lkup[ocode]}]{rom_name}[bold default] -> [bold default][green]{self.arc_map[rom_name]}"
+                        )
+                    else:
+                        branch = pbin_tree.add(
+                            f"[{self.ocode_color_lkup[ocode]}]{rom_name}"
+                        )
+                    branch.add(f"Suggested Name: [green]{self.pbin_map[rom_name]}")
 
         if no_warnings:
             self.console.print(
